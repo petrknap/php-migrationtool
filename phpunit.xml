@@ -1,10 +1,9 @@
 <phpunit bootstrap="./vendor/autoload.php">
     <testsuites>
-        <testsuite name="main">
-            <directory suffix="Test.php">./tests</directory>
+        <testsuite>
+            <directory suffix="Test.php">.</directory>
+            <exclude>temp</exclude>
+            <exclude>vendor</exclude>
         </testsuite>
     </testsuites>
-    <logging>
-        <log type="testdox-text" target="./tests/phpunit.log"/>
-    </logging>
 </phpunit>

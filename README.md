@@ -1,6 +1,4 @@
-# php-migrationtool
-
-Migration tool for PHP
+# Migration tool for PHP
 
 * [What is Migration?](#what-is-migration)
 * [Usage of php-migrationtool](#usage-of-php-migrationtool)
@@ -74,6 +72,12 @@ Run `composer require petrknap/php-migrationtool` or merge this JSON code with y
 ```
 
 Or manually clone this repository via `git clone https://github.com/petrknap/php-migrationtool.git` or download [this repository as ZIP] and extract files into your project.
+
+
+
+[one of released versions]:https://github.com/petrknap/php-migrationtool/releases
+[this repository as ZIP]:https://github.com/petrknap/php-migrationtool/archive/master.zip
+
 
 
 

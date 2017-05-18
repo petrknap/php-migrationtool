@@ -18,7 +18,7 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
     {
         $reflectionClass = new \ReflectionClass($object);
 
-        $returns = array();
+        $returns = [];
         foreach ($invokes as $invoke) {
             $methodName = $invoke[0];
             $arguments = (array)@$invoke[1];
@@ -55,13 +55,12 @@ abstract class TestCase extends \PHPUnit_Framework_TestCase
      */
     protected function getLogger(array &$log)
     {
-        $interface = 'Psr\Log\LoggerInterface';
-        $logger = $this->getMock($interface);
-        foreach (array_filter(get_class_methods($interface), function ($method) {return '_' != $method[0];}) as $method) {
+        $logger = $this->getMock(LoggerInterface::class);
+        foreach (array_filter(get_class_methods(LoggerInterface::class), function ($method) {return '_' != $method[0];}) as $method) {
             $logger->expects($this->any())->method($method)->willReturnCallback(function ($message)  use ($method, &$log) {
                 $l = &$log[$method];
                 if (!$l) {
-                    $l = array();
+                    $l = [];
                 }
                 $l[] = $message;
             });

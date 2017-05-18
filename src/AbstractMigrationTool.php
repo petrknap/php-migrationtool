@@ -55,9 +55,9 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
      * @param array $context
      * @return string
      */
-    protected function interpolate($message, array $context = array())
+    protected function interpolate($message, array $context = [])
     {
-        $replace = array();
+        $replace = [];
         foreach ($context as $key => $val) {
             // check that the value can be casted to string
             if (!is_array($val) && (!is_object($val) || method_exists($val, '__toString'))) {
@@ -90,13 +90,13 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
     public function migrate()
     {
         $migrationFiles = $this->getMigrationFiles();
-        $migrationFilesToMigrate = array();
+        $migrationFilesToMigrate = [];
         foreach ($migrationFiles as $migrationFile) {
             if ($this->isMigrationApplied($migrationFile)) {
                 if (!empty($migrationFilesToMigrate)) {
-                    $context = array(
-                        'id' => $this->getMigrationId($migrationFile)
-                    );
+                    $context = [
+                        'id' => $this->getMigrationId($migrationFile),
+                    ];
 
                     if ($this->logger) {
                         $this->logger->critical(
@@ -122,10 +122,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
         }
 
         if (empty($migrationFilesToMigrate)) {
-            $context = array(
+            $context = [
                 'path' => $this->directory,
                 'pattern' => $this->filePattern,
-            );
+            ];
 
             if ($this->logger) {
                 $this->logger->notice(
@@ -148,9 +148,9 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                 if ($this->logger) {
                     $this->logger->info(
                         self::MESSAGE__MIGRATION_FILE_APPLIED__PATH,
-                        array(
+                        [
                             'path' => $migrationFile,
-                        )
+                        ]
                     );
                 }
             }
@@ -171,16 +171,16 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
     protected function getMigrationFiles()
     {
         $directoryIterator = new \DirectoryIterator($this->directory);
-        $migrationFiles = array();
+        $migrationFiles = [];
         foreach ($directoryIterator as $fileInfo) {
             /** @var \SplFileInfo $fileInfo */
             if ($fileInfo->isFile()) {
                 if (preg_match($this->filePattern, $fileInfo->getRealPath())) {
                     $migrationFiles[] = $fileInfo->getRealPath();
                 } else {
-                    $context = array(
+                    $context = [
                         'path' => $fileInfo->getRealPath(),
-                    );
+                    ];
 
                     if ($this->logger) {
                         $this->logger->notice(
@@ -202,10 +202,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
         sort($migrationFiles);
 
         if (empty($migrationFiles)) {
-            $context = array(
+            $context = [
                 'path' => $this->directory,
                 'pattern' => $this->filePattern,
-            );
+            ];
 
             if ($this->logger) {
                 $this->logger->warning(
@@ -226,11 +226,11 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
         if ($this->logger) {
             $this->logger->info(
                 self::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
-                array(
+                [
                     'count' => count($migrationFiles),
                     'path' => $this->directory,
                     'pattern' => $this->filePattern,
-                )
+                ]
             );
         }
 

@@ -1,7 +1,4 @@
 /tests          export-ignore
 /.gitattributes export-ignore
 /.gitignore     export-ignore
-/makefile       export-ignore
 /phpunit.xml    export-ignore
-/Dockerfile     export-ignore
-/VERSIONING.md  export-ignore

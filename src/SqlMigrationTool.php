@@ -82,15 +82,15 @@ class SqlMigrationTool extends AbstractMigrationTool
                 if ($this->getLogger()) {
                     $this->getLogger()->debug(
                         self::MESSAGE__CREATED_MIGRATION_TABLE__TABLE,
-                        array(
+                        [
                             'table' => $this->migrationTableName,
-                        )
+                        ]
                     );
                 }
             } catch (\PDOException $exception) {
-                $context = array(
-                    'table' => $this->migrationTableName
-                );
+                $context = [
+                    'table' => $this->migrationTableName,
+                ];
 
                 if ($this->getLogger()) {
                     $this->getLogger()->critical(
@@ -120,11 +120,11 @@ class SqlMigrationTool extends AbstractMigrationTool
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
             /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $this->pdo->prepare('INSERT INTO ' . $this->migrationTableName . ' (id) VALUES (:id)')->execute(array('id' => $migrationId));
+            $this->pdo->prepare('INSERT INTO ' . $this->migrationTableName . ' (id) VALUES (:id)')->execute(['id' => $migrationId]);
         } catch (\PDOException $exception) {
-            $context = array(
-                'id' => $migrationId
-            );
+            $context = [
+                'id' => $migrationId,
+            ];
 
             if (null != $this->getLogger()) {
                 $this->getLogger()->critical(
@@ -153,13 +153,13 @@ class SqlMigrationTool extends AbstractMigrationTool
         try {
             /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
             $statement = $this->pdo->prepare('SELECT null FROM ' . $this->migrationTableName . ' WHERE id = :id');
-            $statement->execute(array('id' => $migrationId));
+            $statement->execute(['id' => $migrationId]);
 
             return false !== $statement->fetch();
         } catch (\PDOException $exception) {
-            $context = array(
-                'table' => $this->migrationTableName
-            );
+            $context = [
+                'table' => $this->migrationTableName,
+            ];
 
             if ($this->getLogger()) {
                 $this->getLogger()->critical(
@@ -187,9 +187,9 @@ class SqlMigrationTool extends AbstractMigrationTool
         $migrationData = @file_get_contents($pathToMigrationFile);
 
         if ($migrationData === false) {
-            $context = array(
-                'path' => $pathToMigrationFile
-            );
+            $context = [
+                'path' => $pathToMigrationFile,
+            ];
 
             if ($this->getLogger()) {
                 $this->getLogger()->critical(
@@ -215,9 +215,9 @@ class SqlMigrationTool extends AbstractMigrationTool
         } catch (\PDOException $exception) {
             $this->pdo->rollBack();
 
-            $context = array(
+            $context = [
                 'path' => $pathToMigrationFile,
-            );
+            ];
 
             if ($this->getLogger()) {
                 $this->getLogger()->critical(
