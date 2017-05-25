@@ -31,8 +31,6 @@ class SqlMigrationToolTest extends TestCase
         $this->assertEquals('/\.sql$/i', $this->getProperty($tool, 'filePattern'));
     }
 
-    // TODO check warning for wrongly configured PDO
-
     public function testCreateMigrationTableMethodWorks(LoggerInterface $logger = null)
     {
         $pdo = $this->getPDO();

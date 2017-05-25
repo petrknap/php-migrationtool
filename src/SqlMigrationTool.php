@@ -31,6 +31,8 @@ class SqlMigrationTool extends AbstractMigrationTool
      */
     private $migrationTableName;
 
+    private $supportsMultiStatements;
+
     /**
      * @param string $directory
      * @param \PDO $pdo
@@ -44,30 +46,9 @@ class SqlMigrationTool extends AbstractMigrationTool
         $this->migrationTableName = $migrationTableName;
 
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        if ('mysql' === $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME)) {
-            if (false !== $this->pdo->getAttribute(\PDO::MYSQL_ATTR_MULTI_STATEMENTS)) { // Note, this constant can only be used in the driver_options array when constructing a new database handle.
-                $context = [
-                    'object' => 'PDO',
-                    'attribute' => 'MYSQL_ATTR_MULTI_STATEMENTS',
-                    'expected' => 'false'
-                ];
-
-                if ($this->getLogger()) {
-                    $this->getLogger()->warning(
-                        self::MESSAGE__WRONG_CONFIGURATION__OBJECT_ATTRIBUTE_EXPECTED,
-                        $context
-                    );
-                } else {
-                    user_error(
-                        $this->interpolate(
-                            self::MESSAGE__WRONG_CONFIGURATION__OBJECT_ATTRIBUTE_EXPECTED,
-                            $context
-                        ),
-                        E_USER_WARNING
-                    );
-                }
-            }
-        }
+        $this->supportsMultiStatements = in_array($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), [
+            "mysql"
+        ]);
     }
 
     /**
@@ -230,7 +211,14 @@ class SqlMigrationTool extends AbstractMigrationTool
         $this->pdo->beginTransaction();
 
         try {
-            $this->pdo->exec($migrationData);
+            if ($this->supportsMultiStatements) {
+                $statement = $this->pdo->prepare($migrationData);
+                $statement->execute();
+                while ($statement->nextRowset());
+                $statement->closeCursor();
+            } else {
+                $this->pdo->exec($migrationData);
+            }
             $this->registerMigrationFile($pathToMigrationFile);
             $this->pdo->commit();
         } catch (\PDOException $exception) {

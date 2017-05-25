@@ -15,7 +15,6 @@ use Psr\Log\LoggerInterface;
  */
 abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAwareInterface
 {
-    const MESSAGE__WRONG_CONFIGURATION__OBJECT_ATTRIBUTE_EXPECTED = 'The {object}\'s attribute {attribute} was expected to be set to {expected}';
     const MESSAGE__FOUND_UNSUPPORTED_FILE__PATH = 'Found unsupported file {path}';
     const MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN = 'Found {count} migration files in {path} matching {pattern}';
     const MESSAGE__MIGRATION_FILE_APPLIED__PATH = 'Migration file {path} applied';
