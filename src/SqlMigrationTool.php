@@ -45,7 +45,28 @@ class SqlMigrationTool extends AbstractMigrationTool
 
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         if ('mysql' === $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME)) {
-            $this->pdo->setAttribute(\PDO::MYSQL_ATTR_MULTI_STATEMENTS, false);
+            if (false !== $this->pdo->getAttribute(\PDO::MYSQL_ATTR_MULTI_STATEMENTS)) { // Note, this constant can only be used in the driver_options array when constructing a new database handle.
+                $context = [
+                    'object' => 'PDO',
+                    'attribute' => 'MYSQL_ATTR_MULTI_STATEMENTS',
+                    'expected' => 'false'
+                ];
+
+                if ($this->getLogger()) {
+                    $this->getLogger()->warning(
+                        self::MESSAGE__WRONG_CONFIGURATION__OBJECT_ATTRIBUTE_EXPECTED,
+                        $context
+                    );
+                } else {
+                    user_error(
+                        $this->interpolate(
+                            self::MESSAGE__WRONG_CONFIGURATION__OBJECT_ATTRIBUTE_EXPECTED,
+                            $context
+                        ),
+                        E_USER_WARNING
+                    );
+                }
+            }
         }
     }
 
