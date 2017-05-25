@@ -31,6 +31,9 @@ class SqlMigrationTool extends AbstractMigrationTool
      */
     private $migrationTableName;
 
+    /**
+     * @var bool
+     */
     private $supportsMultiStatements;
 
     /**
