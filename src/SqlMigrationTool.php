@@ -185,9 +185,11 @@ class SqlMigrationTool extends AbstractMigrationTool
     }
 
     /**
-     * @inheritdoc
+     * @param string $pathToMigrationFile
+     * @return string
+     * @throws MigrationFileException
      */
-    protected function applyMigrationFile($pathToMigrationFile)
+    protected function loadMigrationData($pathToMigrationFile)
     {
         $migrationData = @file_get_contents($pathToMigrationFile);
 
@@ -210,6 +212,16 @@ class SqlMigrationTool extends AbstractMigrationTool
                 )
             );
         }
+
+        return $migrationData;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function applyMigrationFile($pathToMigrationFile)
+    {
+        $migrationData = $this->loadMigrationData($pathToMigrationFile);
 
         $this->pdo->beginTransaction();
 
