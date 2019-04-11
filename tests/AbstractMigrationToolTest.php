@@ -254,13 +254,19 @@ class AbstractMigrationToolTest extends TestCase
             [],
             __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks'
         );
-
-        $this->assertEquals(
-            [
+        
+        $expectedOrigin =  [
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.1 - First migration.ext',
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.2 - Second migration.ext',
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.3 - Third migration.ext',
-            ],
+            ];
+        
+            foreach ($expectedOrigin as $expect) {
+                  $expected[] = str_replace('/', DIRECTORY_SEPARATOR  , $expect);
+            }
+
+        $this->assertEquals(
+            $expected,
             @$this->invokeMethods($tool, [['getMigrationFiles']]) // @ because it throws notice if there is unsupported file
         );
     }
