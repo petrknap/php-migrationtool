@@ -11,11 +11,10 @@ class SqlServerAdapter implements DbAdapter {
 
     public function createTableIfNotExists($tableName) {
         return 'IF NOT EXISTS (SELECT * FROM sysobjects WHERE name=\'' . $tableName . '\' and xtype=\'U\')'.
-                       ' CREATE TABLE  . $tableName .  ('.
+                       ' CREATE TABLE ' . $tableName . ' ('.
                             'id VARCHAR(16) NOT NULL PRIMARY KEY,' .
                             'applied DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP' .
-                        ')'.
-                    ' GO';
+                        ')';
     }
 
     public function getDbType() {
@@ -27,11 +26,11 @@ class SqlServerAdapter implements DbAdapter {
     }
 
     public function selectNullFromId($tableName) {
-         return 'SELECT TOP 1 null FROM ' . $tableName;
+        return 'SELECT null FROM ' . $tableName . ' WHERE id = :id';
     }
 
     public function selectOneNull($tableName) {
-        return 'SELECT null FROM ' . $tableName . ' WHERE id = :id';
+         return 'SELECT TOP 1 null FROM ' . $tableName;
     }
 
 }
