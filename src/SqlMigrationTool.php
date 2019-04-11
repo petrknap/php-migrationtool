@@ -4,6 +4,8 @@ namespace PetrKnap\Php\MigrationTool;
 
 use PetrKnap\Php\MigrationTool\Exception\DatabaseException;
 use PetrKnap\Php\MigrationTool\Exception\MigrationFileException;
+use PetrKnap\Php\MigrationTool\DbAdapters\DbAdapter;
+use PetrKnap\Php\MigrationTool\DbAdapters\MySqlAdapter;
 
 /**
  * SQL migration tool
@@ -35,6 +37,12 @@ class SqlMigrationTool extends AbstractMigrationTool
      * @var bool
      */
     private $supportsMultiStatements;
+    
+    /**
+     *
+     * @var DbAdapter
+     */
+    private $adapter;
 
     /**
      * @param string $directory
@@ -42,15 +50,16 @@ class SqlMigrationTool extends AbstractMigrationTool
      * @param string $migrationTableName
      * @param string $filePattern
      */
-    public function __construct($directory, \PDO $pdo, $migrationTableName = 'migrations', $filePattern = '/\.sql$/i')
+    public function __construct($directory, \PDO $pdo, $migrationTableName = 'migrations', $filePattern = '/\.sql$/i', DbAdapter $adapter = null)
     {
         parent::__construct($directory, $filePattern);
         $this->pdo = $pdo;
         $this->migrationTableName = $migrationTableName;
+        $this->adapter = ($adapter) ? $adapter : new MySqlAdapter();
 
         $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $this->supportsMultiStatements = in_array($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), [
-            "mysql"
+           $this->adapter->getDbType()
         ]);
     }
 
@@ -71,17 +80,14 @@ class SqlMigrationTool extends AbstractMigrationTool
     {
         try {
         /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $this->pdo->prepare('SELECT null FROM ' . $this->migrationTableName . ' LIMIT 1')->execute();
+            $this->pdo->prepare(
+                    $this->adapter->selectOneNull($this->migrationTableName)
+            )->execute();
         } catch (\PDOException $ignored) {
             try {
                 /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
                 $this->pdo->exec(
-                    'CREATE TABLE IF NOT EXISTS ' . $this->migrationTableName .
-                    '(' .
-                    'id VARCHAR(16) NOT NULL,' .
-                    'applied DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,' .
-                    'PRIMARY KEY (id)' .
-                    ')'
+                    $this->adapter->createTableIfNotExists($this->migrationTableName)
                 );
 
                 if ($this->getLogger()) {
@@ -125,7 +131,9 @@ class SqlMigrationTool extends AbstractMigrationTool
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
             /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $this->pdo->prepare('INSERT INTO ' . $this->migrationTableName . ' (id) VALUES (:id)')->execute(['id' => $migrationId]);
+            $this->pdo->prepare(
+                    $this->adapter->insertIntoTable($this->migrationTableName)
+            )->execute(['id' => $migrationId]);
         } catch (\PDOException $exception) {
             $context = [
                 'id' => $migrationId,
@@ -157,7 +165,9 @@ class SqlMigrationTool extends AbstractMigrationTool
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
             /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $statement = $this->pdo->prepare('SELECT null FROM ' . $this->migrationTableName . ' WHERE id = :id');
+            $statement = $this->pdo->prepare(
+                    $this->adapter->selectNullFromId($this->migrationTableName)
+            );
             $statement->execute(['id' => $migrationId]);
 
             return false !== $statement->fetch();
