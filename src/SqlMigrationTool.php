@@ -84,25 +84,21 @@ class SqlMigrationTool extends AbstractMigrationTool
                     ')'
                 );
 
-                if ($this->getLogger()) {
-                    $this->getLogger()->debug(
-                        self::MESSAGE__CREATED_MIGRATION_TABLE__TABLE,
-                        [
-                            'table' => $this->migrationTableName,
-                        ]
-                    );
-                }
+                $this->getLogger()->debug(
+                    self::MESSAGE__CREATED_MIGRATION_TABLE__TABLE,
+                    [
+                        'table' => $this->migrationTableName,
+                    ]
+                );
             } catch (\PDOException $exception) {
                 $context = [
                     'table' => $this->migrationTableName,
                 ];
 
-                if ($this->getLogger()) {
-                    $this->getLogger()->critical(
-                        self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
-                        $context
-                    );
-                }
+                $this->getLogger()->critical(
+                    self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
+                    $context
+                );
 
                 throw new DatabaseException(
                     $this->interpolate(
@@ -131,12 +127,10 @@ class SqlMigrationTool extends AbstractMigrationTool
                 'id' => $migrationId,
             ];
 
-            if (null != $this->getLogger()) {
-                $this->getLogger()->critical(
-                    self::MESSAGE__COULD_NOT_REGISTER_MIGRATION__ID,
-                    $context
-                );
-            }
+            $this->getLogger()->critical(
+                self::MESSAGE__COULD_NOT_REGISTER_MIGRATION__ID,
+                $context
+            );
 
             throw new DatabaseException(
                 $this->interpolate(
@@ -166,12 +160,10 @@ class SqlMigrationTool extends AbstractMigrationTool
                 'table' => $this->migrationTableName,
             ];
 
-            if ($this->getLogger()) {
-                $this->getLogger()->critical(
-                    self::MESSAGE__COULD_NOT_READ_FROM_TABLE__TABLE,
-                    $context
-                );
-            }
+            $this->getLogger()->critical(
+                self::MESSAGE__COULD_NOT_READ_FROM_TABLE__TABLE,
+                $context
+            );
 
             throw new DatabaseException(
                 $this->interpolate(
@@ -198,12 +190,10 @@ class SqlMigrationTool extends AbstractMigrationTool
                 'path' => $pathToMigrationFile,
             ];
 
-            if ($this->getLogger()) {
-                $this->getLogger()->critical(
-                    self::MESSAGE__COULD_NOT_READ_MIGRATION_FILE__PATH,
-                    $context
-                );
-            }
+            $this->getLogger()->critical(
+                self::MESSAGE__COULD_NOT_READ_MIGRATION_FILE__PATH,
+                $context
+            );
 
             throw new MigrationFileException(
                 $this->interpolate(
@@ -243,12 +233,10 @@ class SqlMigrationTool extends AbstractMigrationTool
                 'path' => $pathToMigrationFile,
             ];
 
-            if ($this->getLogger()) {
-                $this->getLogger()->critical(
-                    self::MESSAGE__YOU_HAVE_AN_ERROR_IN_YOUR_SQL_SYNTAX__PATH,
-                    $context
-                );
-            }
+            $this->getLogger()->critical(
+                self::MESSAGE__YOU_HAVE_AN_ERROR_IN_YOUR_SQL_SYNTAX__PATH,
+                $context
+            );
 
             throw new MigrationFileException(
                 $this->interpolate(

@@ -5,6 +5,7 @@ namespace PetrKnap\Php\MigrationTool;
 use PetrKnap\Php\MigrationTool\Exception\MismatchException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Abstract migration tool
@@ -81,6 +82,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
      */
     protected function getLogger()
     {
+        if (null === $this->logger) {
+            $this->logger = new NullLogger();
+        }
+
         return $this->logger;
     }
 
@@ -98,12 +103,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                         'id' => $this->getMigrationId($migrationFile),
                     ];
 
-                    if ($this->logger) {
-                        $this->logger->critical(
-                            self::MESSAGE__DETECTED_GAPE_BEFORE_MIGRATION__ID,
-                            $context
-                        );
-                    }
+                    $this->getLogger()->critical(
+                        self::MESSAGE__DETECTED_GAPE_BEFORE_MIGRATION__ID,
+                        $context
+                    );
 
                     throw new MismatchException(
                         sprintf(
@@ -127,40 +130,26 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                 'pattern' => $this->filePattern,
             ];
 
-            if ($this->logger) {
-                $this->logger->notice(
-                    self::MESSAGE__THERE_IS_NOTHING_TO_MIGRATE__PATH_PATTERN,
-                    $context
-                );
-            } else {
-                user_error(
-                    $this->interpolate(
-                        self::MESSAGE__THERE_IS_NOTHING_TO_MIGRATE__PATH_PATTERN,
-                        $context
-                    ),
-                    E_USER_NOTICE
-                );
-            }
+            $this->getLogger()->notice(
+                self::MESSAGE__THERE_IS_NOTHING_TO_MIGRATE__PATH_PATTERN,
+                $context
+            );
         } else {
             foreach ($migrationFilesToMigrate as $migrationFile) {
                 $this->applyMigrationFile($migrationFile);
 
-                if ($this->logger) {
-                    $this->logger->info(
-                        self::MESSAGE__MIGRATION_FILE_APPLIED__PATH,
-                        [
-                            'path' => $migrationFile,
-                        ]
-                    );
-                }
+                $this->getLogger()->info(
+                    self::MESSAGE__MIGRATION_FILE_APPLIED__PATH,
+                    [
+                        'path' => $migrationFile,
+                    ]
+                );
             }
         }
 
-        if ($this->logger) {
-            $this->logger->info(
-                self::MESSAGE__DONE
-            );
-        }
+        $this->getLogger()->info(
+            self::MESSAGE__DONE
+        );
     }
 
     /**
@@ -182,20 +171,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                         'path' => $fileInfo->getRealPath(),
                     ];
 
-                    if ($this->logger) {
-                        $this->logger->notice(
-                            self::MESSAGE__FOUND_UNSUPPORTED_FILE__PATH,
-                            $context
-                        );
-                    } else {
-                        user_error(
-                            $this->interpolate(
-                                self::MESSAGE__FOUND_UNSUPPORTED_FILE__PATH,
-                                $context
-                            ),
-                            E_USER_NOTICE
-                        );
-                    }
+                    $this->getLogger()->notice(
+                        self::MESSAGE__FOUND_UNSUPPORTED_FILE__PATH,
+                        $context
+                    );
                 }
             }
         }
@@ -207,32 +186,20 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                 'pattern' => $this->filePattern,
             ];
 
-            if ($this->logger) {
-                $this->logger->warning(
-                    self::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
-                    $context
-                );
-            } else {
-                user_error(
-                    $this->interpolate(
-                        self::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
-                        $context
-                    ),
-                    E_USER_WARNING
-                );
-            }
-        }
-
-        if ($this->logger) {
-            $this->logger->info(
-                self::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
-                [
-                    'count' => count($migrationFiles),
-                    'path' => $this->directory,
-                    'pattern' => $this->filePattern,
-                ]
+            $this->getLogger()->warning(
+                self::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
+                $context
             );
         }
+
+        $this->getLogger()->info(
+            self::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
+            [
+                'count' => count($migrationFiles),
+                'path' => $this->directory,
+                'pattern' => $this->filePattern,
+            ]
+        );
 
         return $migrationFiles;
     }
