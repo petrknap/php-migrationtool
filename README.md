@@ -50,10 +50,15 @@ $tool->migrate();
 ```php
 <?php
 
+/** @var \Doctrine\DBAL\Connection $connection */
 $tool = new PetrKnap\Php\MigrationTool\SqlMigrationTool(
     __DIR__ . '/migrations',
-    new PDO('mysql:host=127.0.0.1;dbname=project', $_ENV['DB_USER'], $_ENV['DB_PASS'])
+    $connection
 );
+
+/** @var \Psr\Log\LoggerInterface $logger */
+$tool->setLogger($logger);
+$tool->migrate();
 ```
 
 SQL migration tool **supports native SQL files** as migration file. You can simply copy and paste output from [orm:schema-tool:update --dump-sql], [phpMyAdmin], [Adminer] or whatever with SQL output.
