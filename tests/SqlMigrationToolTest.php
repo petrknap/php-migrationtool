@@ -2,6 +2,9 @@
 
 namespace PetrKnap\Php\MigrationTool\Test;
 
+use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
 use PetrKnap\Php\MigrationTool\Exception\DatabaseException;
 use PetrKnap\Php\MigrationTool\Exception\MigrationException;
 use PetrKnap\Php\MigrationTool\Exception\MigrationFileException;
@@ -12,28 +15,33 @@ class SqlMigrationToolTest extends TestCase
 {
     const TABLE_NAME = 'migration_table';
 
-    private function getPDO()
+    private function getConnection()
     {
-        return new \PDO('sqlite::memory:');
+        $config = new Configuration();
+        $connectionParams = [
+            'driver' => 'pdo_sqlite',
+            'host' => ':memory:',
+        ];
+        return DriverManager::getConnection($connectionParams, $config);
     }
 
-    private function getTool(\PDO $pdo, $dir = null, $table = null)
+    private function getTool(Connection $connection, $dir = null, $table = null)
     {
         if (null === $table) {
             $table = self::TABLE_NAME;
         }
-        return new SqlMigrationTool($dir, $pdo, $table);
+        return new SqlMigrationTool($dir, $connection, $table);
     }
 
     public function testItAcceptsOnlySqlFiles()
     {
-        $tool = $this->getTool($this->getPDO());
+        $tool = $this->getTool($this->getConnection());
         $this->assertEquals('/\.sql$/i', $this->getProperty($tool, 'filePattern'));
     }
 
     public function testCreateMigrationTableMethodWorks(LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -66,7 +74,7 @@ class SqlMigrationToolTest extends TestCase
 
     public function testCreateMigrationTableMethodThrowsDatabaseExceptionIfCouldNotCreateTable(LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = new SqlMigrationTool(null, $pdo, 'invalid name');
 
         if ($logger) {
@@ -100,7 +108,7 @@ class SqlMigrationToolTest extends TestCase
 
     public function testRegisterMigrationFileMethodWorks(LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -135,7 +143,7 @@ class SqlMigrationToolTest extends TestCase
 
     public function testRegisterMigrationFileMethodThrowsDatabaseExceptionIfCouldNotRegisterMigrationId(LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -184,7 +192,7 @@ class SqlMigrationToolTest extends TestCase
      */
     public function testIsMigrationAppliedMethodWorks($migrationFile, $expectedResult, LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -230,7 +238,7 @@ class SqlMigrationToolTest extends TestCase
 
     public function testIsMigrationAppliedMethodThrowsDatabaseExceptionIfCouldNotReadFromTable(LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -272,7 +280,7 @@ class SqlMigrationToolTest extends TestCase
      */
     public function testApplyMigrationFileMethodWorks($pathToMigrationFile, $expectedCount, LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -338,7 +346,7 @@ class SqlMigrationToolTest extends TestCase
      */
     public function testApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile($pathToMigrationFile, $expectedMessage, LoggerInterface $logger = null)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         if ($logger) {
@@ -418,7 +426,7 @@ class SqlMigrationToolTest extends TestCase
      */
     public function testApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile($pathToMigrationFile)
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
 
         $this->invokeMethods($tool, [
@@ -458,7 +466,7 @@ class SqlMigrationToolTest extends TestCase
 
     public function testMigrationProcessStopsAtFirstException()
     {
-        $pdo = $this->getPDO();
+        $pdo = $this->getConnection();
         $tool = $this->getTool($pdo, __DIR__ . '/SqlMigrationToolTest/MigrationProcessStopsAtFirstException');
 
         try {

@@ -3,6 +3,7 @@
 namespace PetrKnap\Php\MigrationTool\Test;
 
 use PetrKnap\Php\MigrationTool\AbstractMigrationTool;
+use PetrKnap\Php\MigrationTool\Exception\MigrationException;
 use PetrKnap\Php\MigrationTool\Exception\MismatchException;
 use PetrKnap\Php\MigrationTool\Test\AbstractMigrationToolTest\AbstractMigrationToolMock;
 use PHPUnit_Framework_Error_Notice;
@@ -122,34 +123,19 @@ class AbstractMigrationToolTest extends TestCase
         ], $log);
     }
 
-    public function testThrowsWarningIfMigrationFolderIsEmpty(LoggerInterface $logger = null)
-    {
-        $dir = __DIR__ . '/AbstractMigrationToolTest/ThrowsWarningIfMigrationFolderIsEmpty';
-        @mkdir($dir);
-        $tool = new AbstractMigrationToolMock([], $dir);
-
-        if ($logger) {
-            $tool->setLogger($logger);
-        }
-
-        try {
-            $tool->migrate();
-            $this->assertNotNull($logger); // if there is a logger
-        } catch (PHPUnit_Framework_Error_Warning $warning) {
-            $this->assertNull($logger); // if there is not a logger
-            $this->assertStringMatchesFormat(
-                $this->getFormatForMessage(AbstractMigrationTool::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN),
-                $warning->getMessage()
-            );
-        }
-    }
-
+    /**
+     * @throws MigrationException
+     */
     public function testLogsWarningIfMigrationFolderIsEmpty()
     {
         $log = [];
-        $this->testThrowsWarningIfMigrationFolderIsEmpty(
-            $this->getLogger($log)
-        );
+        $dir = __DIR__ . '/AbstractMigrationToolTest/ThrowsWarningIfMigrationFolderIsEmpty';
+        @mkdir($dir);
+        $tool = new AbstractMigrationToolMock([], $dir);
+        $tool->setLogger($this->getLogger($log));
+
+        $tool->migrate();
+
         $this->assertLogEquals([
             'warning' => [
                 AbstractMigrationTool::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
@@ -164,35 +150,20 @@ class AbstractMigrationToolTest extends TestCase
         ], $log);
     }
 
-    public function testThrowsNoticeIfThereIsNothingToMigrate(LoggerInterface $logger = null)
+    /**
+     * @throws MigrationException
+     */
+    public function testLogsNoticeIfThereIsNothingToMigrate()
     {
+        $log = [];
         $tool = new AbstractMigrationToolMock(
             ['2017-02-05.1', '2017-02-05.2', '2017-02-05.3'],
             __DIR__ . '/AbstractMigrationToolTest/ThrowsNoticeIfThereIsNothingToMigrate'
         );
+        $tool->setLogger($this->getLogger($log));
 
-        if ($logger) {
-            $tool->setLogger($logger);
-        }
+        $tool->migrate();
 
-        try {
-            $tool->migrate();
-            $this->assertNotNull($logger); // if there is a logger
-        } catch (PHPUnit_Framework_Error_Notice $notice) {
-            $this->assertNull($logger); // if there is not a logger
-            $this->assertStringMatchesFormat(
-                $this->getFormatForMessage(AbstractMigrationTool::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN),
-                $notice->getMessage()
-            );
-        }
-    }
-
-    public function testLogsNoticeIfThereIsNothingToMigrate()
-    {
-        $log = [];
-        $this->testThrowsNoticeIfThereIsNothingToMigrate(
-            $this->getLogger($log)
-        );
         $this->assertLogEquals([
             'info' => [
                 AbstractMigrationTool::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
@@ -204,35 +175,20 @@ class AbstractMigrationToolTest extends TestCase
         ], $log);
     }
 
-    public function testThrowsNoticeIfThereIsUnsupportedFile(LoggerInterface $logger = null)
+    /**
+     * @throws MigrationException
+     */
+    public function testLogsNoticeIfThereIsUnsupportedFile()
     {
+        $log = [];
         $tool = new AbstractMigrationToolMock(
             [],
             __DIR__ . '/AbstractMigrationToolTest/ThrowsNoticeIfThereIsUnsupportedFile'
         );
+        $tool->setLogger($this->getLogger($log));
 
-        if ($logger) {
-            $tool->setLogger($logger);
-        }
+        $tool->migrate();
 
-        try {
-            $tool->migrate();
-            $this->assertNotNull($logger); // if there is a logger
-        } catch (PHPUnit_Framework_Error_Notice $notice) {
-            $this->assertNull($logger); // if there is not a logger
-            $this->assertStringMatchesFormat(
-                $this->getFormatForMessage(AbstractMigrationTool::MESSAGE__FOUND_UNSUPPORTED_FILE__PATH),
-                $notice->getMessage()
-            );
-        }
-    }
-
-    public function testLogsNoticeIfThereIsUnsupportedFile()
-    {
-        $log = [];
-        $this->testThrowsNoticeIfThereIsUnsupportedFile(
-            $this->getLogger($log)
-        );
         $this->assertLogEquals([
             'notice' => [
                 AbstractMigrationTool::MESSAGE__FOUND_UNSUPPORTED_FILE__PATH,
