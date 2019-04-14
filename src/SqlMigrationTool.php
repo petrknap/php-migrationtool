@@ -36,11 +36,6 @@ class SqlMigrationTool extends AbstractMigrationTool
     private $migrationTableName;
 
     /**
-     * @var bool
-     */
-    private $supportsMultiStatements;
-
-    /**
      * @param string $directory
      * @param Connection $connection
      * @param string $migrationTableName
@@ -51,10 +46,6 @@ class SqlMigrationTool extends AbstractMigrationTool
         parent::__construct($directory, $filePattern);
         $this->connection = $connection;
         $this->migrationTableName = $migrationTableName;
-
-        $this->supportsMultiStatements = in_array($this->connection->getDatabasePlatform()->getName(), [
-            "mysql"
-        ]);
     }
 
     /**
