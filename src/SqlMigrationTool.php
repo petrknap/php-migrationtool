@@ -2,6 +2,10 @@
 
 namespace PetrKnap\Php\MigrationTool;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception\TableExistsException;
+use Doctrine\DBAL\Schema\Table;
 use PetrKnap\Php\MigrationTool\Exception\DatabaseException;
 use PetrKnap\Php\MigrationTool\Exception\MigrationFileException;
 
@@ -22,9 +26,9 @@ class SqlMigrationTool extends AbstractMigrationTool
     const MESSAGE__YOU_HAVE_AN_ERROR_IN_YOUR_SQL_SYNTAX__PATH = 'You have an error in your SQL syntax in {path}';
 
     /**
-     * @var \PDO
+     * @var Connection
      */
-    private $pdo;
+    private $connection;
 
     /**
      * @var string
@@ -38,18 +42,17 @@ class SqlMigrationTool extends AbstractMigrationTool
 
     /**
      * @param string $directory
-     * @param \PDO $pdo
+     * @param Connection $connection
      * @param string $migrationTableName
      * @param string $filePattern
      */
-    public function __construct($directory, \PDO $pdo, $migrationTableName = 'migrations', $filePattern = '/\.sql$/i')
+    public function __construct($directory, Connection $connection, $migrationTableName = 'migrations', $filePattern = '/\.sql$/i')
     {
         parent::__construct($directory, $filePattern);
-        $this->pdo = $pdo;
+        $this->connection = $connection;
         $this->migrationTableName = $migrationTableName;
 
-        $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        $this->supportsMultiStatements = in_array($this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME), [
+        $this->supportsMultiStatements = in_array($this->connection->getDatabasePlatform()->getName(), [
             "mysql"
         ]);
     }
@@ -70,45 +73,39 @@ class SqlMigrationTool extends AbstractMigrationTool
     protected function createMigrationTable()
     {
         try {
-        /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $this->pdo->prepare('SELECT null FROM ' . $this->migrationTableName . ' LIMIT 1')->execute();
-        } catch (\PDOException $ignored) {
-            try {
-                /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-                $this->pdo->exec(
-                    'CREATE TABLE IF NOT EXISTS ' . $this->migrationTableName .
-                    '(' .
-                    'id VARCHAR(16) NOT NULL,' .
-                    'applied DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,' .
-                    'PRIMARY KEY (id)' .
-                    ')'
-                );
+            $table = new Table($this->migrationTableName);
+            $table->addColumn('id', 'string', ['length' => 16]);
+            $table->addColumn('applied', 'datetime');
+            $table->setPrimaryKey(['id']);
 
-                $this->getLogger()->debug(
-                    self::MESSAGE__CREATED_MIGRATION_TABLE__TABLE,
-                    [
-                        'table' => $this->migrationTableName,
-                    ]
-                );
-            } catch (\PDOException $exception) {
-                $context = [
+            $this->connection->getSchemaManager()->createTable($table);
+
+            $this->getLogger()->debug(
+                self::MESSAGE__CREATED_MIGRATION_TABLE__TABLE,
+                [
                     'table' => $this->migrationTableName,
-                ];
+                ]
+            );
+        } catch (TableExistsException $ignored) {
+            // Do nothing
+        } catch (DBALException $exception) {
+            $context = [
+                'table' => $this->migrationTableName,
+            ];
 
-                $this->getLogger()->critical(
+            $this->getLogger()->critical(
+                self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
+                $context
+            );
+
+            throw new DatabaseException(
+                $this->interpolate(
                     self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
                     $context
-                );
-
-                throw new DatabaseException(
-                    $this->interpolate(
-                        self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
-                        $context
-                    ),
-                    0,
-                    $exception
-                );
-            }
+                ),
+                0,
+                $exception
+            );
         }
     }
 
@@ -120,9 +117,14 @@ class SqlMigrationTool extends AbstractMigrationTool
     {
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
-            /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $this->pdo->prepare('INSERT INTO ' . $this->migrationTableName . ' (id) VALUES (:id)')->execute(['id' => $migrationId]);
-        } catch (\PDOException $exception) {
+            $this->connection->insert(
+                $this->migrationTableName,
+                [
+                    'id' => $migrationId,
+                    'applied' => (new \DateTime())->format(\DateTime::ISO8601),
+                ]
+            );
+        } catch (DBALException $exception) {
             $context = [
                 'id' => $migrationId,
             ];
@@ -150,12 +152,13 @@ class SqlMigrationTool extends AbstractMigrationTool
     {
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
-            /** @noinspection SqlNoDataSourceInspection,SqlDialectInspection */
-            $statement = $this->pdo->prepare('SELECT null FROM ' . $this->migrationTableName . ' WHERE id = :id');
+            $statement = $this->connection->prepare(
+                "SELECT id FROM `{$this->migrationTableName}` WHERE id = :id"
+            );
             $statement->execute(['id' => $migrationId]);
 
             return false !== $statement->fetch();
-        } catch (\PDOException $exception) {
+        } catch (DBALException $exception) {
             $context = [
                 'table' => $this->migrationTableName,
             ];
@@ -213,21 +216,14 @@ class SqlMigrationTool extends AbstractMigrationTool
     {
         $migrationData = $this->loadMigrationData($pathToMigrationFile);
 
-        $this->pdo->beginTransaction();
+        $this->connection->beginTransaction();
 
         try {
-            if ($this->supportsMultiStatements) {
-                $statement = $this->pdo->prepare($migrationData);
-                $statement->execute();
-                while ($statement->nextRowset());
-                $statement->closeCursor();
-            } else {
-                $this->pdo->exec($migrationData);
-            }
+            $this->connection->exec($migrationData);
             $this->registerMigrationFile($pathToMigrationFile);
-            $this->pdo->commit();
-        } catch (\PDOException $exception) {
-            $this->pdo->rollBack();
+            $this->connection->commit();
+        } catch (DBALException $exception) {
+            $this->connection->rollBack();
 
             $context = [
                 'path' => $pathToMigrationFile,
