@@ -144,7 +144,7 @@ class SqlMigrationTool extends AbstractMigrationTool
         $migrationId = $this->getMigrationId($pathToMigrationFile);
         try {
             $statement = $this->connection->prepare(
-                "SELECT id FROM `{$this->migrationTableName}` WHERE id = :id"
+                "SELECT id FROM {$this->migrationTableName} WHERE id = :id"
             );
             $statement->execute(['id' => $migrationId]);
 
