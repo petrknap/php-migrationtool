@@ -80,23 +80,27 @@ class SqlMigrationTool extends AbstractMigrationTool
         } catch (TableExistsException $ignored) {
             // Do nothing
         } catch (DBALException $exception) {
-            $context = [
-                'table' => $this->migrationTableName,
-            ];
+            if ($this->connection->getDriver() instanceof \Doctrine\DBAL\Driver\SQLSrv\Driver && "42S01" === $this->connection->errorCode()) {
+                 // Table exists - Do nothing
+            } else {
+                $context = [
+                    'table' => $this->migrationTableName,
+                ];
 
-            $this->getLogger()->critical(
-                self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
-                $context
-            );
-
-            throw new DatabaseException(
-                $this->interpolate(
+                $this->getLogger()->critical(
                     self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
                     $context
-                ),
-                0,
-                $exception
-            );
+                );
+
+                throw new DatabaseException(
+                    $this->interpolate(
+                        self::MESSAGE__COULD_NOT_CREATE_TABLE__TABLE,
+                        $context
+                    ),
+                    0,
+                    $exception
+                );
+            } 
         }
     }
 
