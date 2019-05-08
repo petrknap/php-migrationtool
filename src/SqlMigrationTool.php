@@ -18,6 +18,8 @@ use PetrKnap\Php\MigrationTool\Exception\MigrationFileException;
  */
 class SqlMigrationTool extends AbstractMigrationTool
 {
+    const SQLSTATE__BASE_TABLE_OR_VIEW_ALREADY_EXISTS = '42S01';
+
     const MESSAGE__COULD_NOT_CREATE_TABLE__TABLE = 'Could not create migration table {table}';
     const MESSAGE__CREATED_MIGRATION_TABLE__TABLE = 'Created migration table {table}';
     const MESSAGE__COULD_NOT_REGISTER_MIGRATION__ID = 'Could not register migration {id}';
@@ -80,6 +82,10 @@ class SqlMigrationTool extends AbstractMigrationTool
         } catch (TableExistsException $ignored) {
             // Do nothing
         } catch (DBALException $exception) {
+            if (static::SQLSTATE__BASE_TABLE_OR_VIEW_ALREADY_EXISTS === $this->connection->errorCode()) {
+                return /* DBAL sometimes does not throw correct TableExistsException */;
+            }
+
             $context = [
                 'table' => $this->migrationTableName,
             ];
