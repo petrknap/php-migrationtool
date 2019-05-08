@@ -118,7 +118,7 @@ class SqlMigrationTool extends AbstractMigrationTool
                 $this->migrationTableName,
                 [
                     'id' => $migrationId,
-                    'applied' => (new \DateTime())->format(\DateTime::ISO8601),
+                    'applied' => (new \DateTime())->format(str_replace('O', '', \DateTime::ISO8601)),
                 ]
             );
         } catch (DBALException $exception) {
