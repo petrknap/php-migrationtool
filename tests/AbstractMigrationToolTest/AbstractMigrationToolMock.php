@@ -28,16 +28,16 @@ class AbstractMigrationToolMock extends AbstractMigrationTool
     /**
      * @inheritdoc
      */
-    protected function isMigrationApplied($pathToMigrationFile)
+    protected function isMigrationApplied($moduleId, $pathToMigrationFile)
     {
-        return in_array($this->getMigrationId($pathToMigrationFile), $this->appliedMigrations);
+        return in_array($this->getMigrationId($moduleId, $pathToMigrationFile), $this->appliedMigrations);
     }
 
     /**
      * @inheritdoc
      */
-    protected function applyMigrationFile($pathToMigrationFile)
+    protected function applyMigrationFile($moduleId, $pathToMigrationFile)
     {
-        $this->appliedMigrations[] = $this->getMigrationId($pathToMigrationFile);
+        $this->appliedMigrations[] = $this->getMigrationId($moduleId, $pathToMigrationFile);
     }
 }
