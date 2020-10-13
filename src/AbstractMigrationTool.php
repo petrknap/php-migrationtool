@@ -94,13 +94,48 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
      */
     public function migrate()
     {
-        $migrationFiles = $this->getMigrationFiles();
+        $migrationModules = $this->getMigrationFiles();
+        $migrationFilesToMigrate = [];
+        foreach ($migrationModules as $migrationModuleId => $migrationFiles) {
+            $migrationFilesToMigrate[$migrationModuleId] = $this->migrateModule($migrationModuleId, $migrationFiles);
+        }
+        
+        foreach ($migrationFilesToMigrate as $moduleId => $migrationFiles) {
+            if (empty($migrationFiles)) {
+                $context = [
+                    'path' => $migrationFiles,
+                    'pattern' => $this->filePattern,
+                ];
+
+                $this->getLogger()->notice(
+                    self::MESSAGE__THERE_IS_NOTHING_TO_MIGRATE__PATH_PATTERN,
+                    $context
+                );
+            } else {
+                 foreach ($migrationFiles as $migrationFile) {
+                    $this->applyMigrationFile($moduleId, $migrationFile);
+                    $this->getLogger()->info(
+                        self::MESSAGE__MIGRATION_FILE_APPLIED__PATH,
+                        [
+                            'path' => $migrationFile,
+                        ]
+                    );
+                }
+            }
+        }
+
+        $this->getLogger()->info(
+            self::MESSAGE__DONE
+        );
+    }
+    
+    private function migrateModule($moduleId, array $migrationFiles) {
         $migrationFilesToMigrate = [];
         foreach ($migrationFiles as $migrationFile) {
-            if ($this->isMigrationApplied($migrationFile)) {
+            if ($this->isMigrationApplied($moduleId, $migrationFile)) {
                 if (!empty($migrationFilesToMigrate)) {
                     $context = [
-                        'id' => $this->getMigrationId($migrationFile),
+                        'id' => $this->getMigrationId($moduleId, $migrationFile),
                     ];
 
                     $this->getLogger()->critical(
@@ -121,35 +156,10 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                 }
             } else {
                 $migrationFilesToMigrate[] = $migrationFile;
-            }
+            }   
         }
-
-        if (empty($migrationFilesToMigrate)) {
-            $context = [
-                'path' => $this->directory,
-                'pattern' => $this->filePattern,
-            ];
-
-            $this->getLogger()->notice(
-                self::MESSAGE__THERE_IS_NOTHING_TO_MIGRATE__PATH_PATTERN,
-                $context
-            );
-        } else {
-            foreach ($migrationFilesToMigrate as $migrationFile) {
-                $this->applyMigrationFile($migrationFile);
-
-                $this->getLogger()->info(
-                    self::MESSAGE__MIGRATION_FILE_APPLIED__PATH,
-                    [
-                        'path' => $migrationFile,
-                    ]
-                );
-            }
-        }
-
-        $this->getLogger()->info(
-            self::MESSAGE__DONE
-        );
+        return $migrationFilesToMigrate;
+        
     }
 
     /**
@@ -159,7 +169,44 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
      */
     protected function getMigrationFiles()
     {
-        $directoryIterator = new \DirectoryIterator($this->directory);
+        $migrationFiles = [];
+        if (is_array($this->directory)) {
+            foreach ($this->directory as $module => $dir) {
+                $migrations = $this->getMigrationFilesFromModule(new \DirectoryIterator($dir));
+                sort($migrations);
+                $migrationFiles[$module . '_'] = $migrations;
+            }
+        } else {
+            $migrationFiles[''] = $this->getMigrationFilesFromModule(new \DirectoryIterator($this->directory));
+        }
+
+        foreach ($migrationFiles as $list) {
+            if (empty($list)) {
+                $context = [
+                    'path' => $this->directory,
+                    'pattern' => $this->filePattern,
+                ];
+
+                $this->getLogger()->warning(
+                    self::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
+                    $context
+                );
+            }
+        }
+
+        $this->getLogger()->info(
+            self::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
+            [
+                'count' => count($migrationFiles),
+                'path' => $this->directory,
+                'pattern' => $this->filePattern,
+            ]
+        );
+
+        return $migrationFiles;
+    }
+    
+    private function getMigrationFilesFromModule($directoryIterator) {
         $migrationFiles = [];
         foreach ($directoryIterator as $fileInfo) {
             /** @var \SplFileInfo $fileInfo */
@@ -178,29 +225,6 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
                 }
             }
         }
-        sort($migrationFiles);
-
-        if (empty($migrationFiles)) {
-            $context = [
-                'path' => $this->directory,
-                'pattern' => $this->filePattern,
-            ];
-
-            $this->getLogger()->warning(
-                self::MESSAGE__THERE_IS_NOTHING_MATCHING_PATTERN__PATH_PATTERN,
-                $context
-            );
-        }
-
-        $this->getLogger()->info(
-            self::MESSAGE__FOUND_MIGRATION_FILES__COUNT_PATH_PATTERN,
-            [
-                'count' => count($migrationFiles),
-                'path' => $this->directory,
-                'pattern' => $this->filePattern,
-            ]
-        );
-
         return $migrationFiles;
     }
 
@@ -208,22 +232,22 @@ abstract class AbstractMigrationTool implements MigrationToolInterface, LoggerAw
      * @param string $pathToMigrationFile
      * @return string
      */
-    protected function getMigrationId($pathToMigrationFile)
+    protected function getMigrationId($moduleId, $pathToMigrationFile)
     {
         $fileInfo = new \SplFileInfo($pathToMigrationFile);
         $basenameParts = explode(' ', $fileInfo->getBasename('.' . $fileInfo->getExtension()));
-        return $basenameParts[0];
+        return $moduleId . $basenameParts[0];
     }
 
     /**
      * @param string $pathToMigrationFile
      * @return bool
      */
-    abstract protected function isMigrationApplied($pathToMigrationFile);
+    abstract protected function isMigrationApplied($moduleId, $pathToMigrationFile);
 
     /**
      * @param $pathToMigrationFile
      * @return void
      */
-    abstract protected function applyMigrationFile($pathToMigrationFile);
+    abstract protected function applyMigrationFile($moduleId, $pathToMigrationFile);
 }

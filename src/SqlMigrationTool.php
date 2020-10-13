@@ -110,9 +110,9 @@ class SqlMigrationTool extends AbstractMigrationTool
      * @param string $pathToMigrationFile
      * @throws DatabaseException
      */
-    protected function registerMigrationFile($pathToMigrationFile)
+    protected function registerMigrationFile($moduleId, $pathToMigrationFile)
     {
-        $migrationId = $this->getMigrationId($pathToMigrationFile);
+        $migrationId = $this->getMigrationId($moduleId, $pathToMigrationFile);
         try {
             $this->connection->insert(
                 $this->migrationTableName,
@@ -145,9 +145,9 @@ class SqlMigrationTool extends AbstractMigrationTool
     /**
      * @inheritdoc
      */
-    protected function isMigrationApplied($pathToMigrationFile)
+    protected function isMigrationApplied($moduleId, $pathToMigrationFile)
     {
-        $migrationId = $this->getMigrationId($pathToMigrationFile);
+        $migrationId = $this->getMigrationId($moduleId, $pathToMigrationFile);
         try {
             $statement = $this->connection->prepare(
                 "SELECT id FROM {$this->connection->quoteIdentifier($this->migrationTableName)} WHERE id = :id"
@@ -209,7 +209,7 @@ class SqlMigrationTool extends AbstractMigrationTool
     /**
      * @inheritdoc
      */
-    protected function applyMigrationFile($pathToMigrationFile)
+    protected function applyMigrationFile($moduleId, $pathToMigrationFile)
     {
         $migrationData = $this->loadMigrationData($pathToMigrationFile);
 
@@ -217,7 +217,7 @@ class SqlMigrationTool extends AbstractMigrationTool
 
         try {
             $this->connection->exec($migrationData);
-            $this->registerMigrationFile($pathToMigrationFile);
+            $this->registerMigrationFile($moduleId, $pathToMigrationFile);
             $this->connection->commit();
         } catch (DBALException $exception) {
             $this->connection->rollBack();

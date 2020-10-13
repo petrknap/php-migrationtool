@@ -118,6 +118,7 @@ class SqlMigrationToolTest extends TestCase
         $this->invokeMethods($tool, [
             ['createMigrationTable'],
             ['registerMigrationFile', [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/RegisterMigrationFileMethodWorks/2017-02-05.1 - First migration.sql',
             ]],
         ]);
@@ -154,9 +155,11 @@ class SqlMigrationToolTest extends TestCase
             $this->invokeMethods($tool, [
                 ['createMigrationTable'],
                 ['registerMigrationFile', [
+                    '',
                     '/2017-02-05.1.sql',
                 ]],
                 ['registerMigrationFile', [
+                    '',
                     '/2017-02-05.1.sql',
                 ]],
             ]);
@@ -190,7 +193,7 @@ class SqlMigrationToolTest extends TestCase
      * @param bool $expectedResult
      * @param LoggerInterface $logger
      */
-    public function testIsMigrationAppliedMethodWorks($migrationFile, $expectedResult, LoggerInterface $logger = null)
+    public function testIsMigrationAppliedMethodWorks($moduleId, $migrationFile, $expectedResult, LoggerInterface $logger = null)
     {
         $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
@@ -204,9 +207,10 @@ class SqlMigrationToolTest extends TestCase
             $this->invokeMethods($tool, [
                 ['createMigrationTable'],
                 ['registerMigrationFile', [
+                    '',
                     '/2017-02-05.1.sql',
                 ]],
-                ['isMigrationApplied', [$migrationFile]],
+                ['isMigrationApplied', [$moduleId, $migrationFile]],
             ])
         );
     }
@@ -214,8 +218,8 @@ class SqlMigrationToolTest extends TestCase
     public function dataIsMigrationAppliedMethodWorks()
     {
         return [
-            ['/2017-02-05.1.sql', true],
-            ['/2017-02-05.2.sql', false],
+            ['', '/2017-02-05.1.sql', true],
+            ['', '/2017-02-05.2.sql', false],
         ];
     }
 
@@ -226,6 +230,7 @@ class SqlMigrationToolTest extends TestCase
         $this->testIsMigrationAppliedMethodWorks(
             $data[0][0],
             $data[0][1],
+            $data[0][2],
             $this->getLogger($log)
         );
 
@@ -247,7 +252,7 @@ class SqlMigrationToolTest extends TestCase
 
         try {
             $this->invokeMethods($tool, [
-                ['isMigrationApplied', ['/2017-02-05.1.sql']],
+                ['isMigrationApplied', ['', '/2017-02-05.1.sql']],
             ]);
             $this->fail();
         } catch (DatabaseException $exception) {
@@ -278,7 +283,7 @@ class SqlMigrationToolTest extends TestCase
      * @param int $expectedCount
      * @param LoggerInterface $logger
      */
-    public function testApplyMigrationFileMethodWorks($pathToMigrationFile, $expectedCount, LoggerInterface $logger = null)
+    public function testApplyMigrationFileMethodWorks($moduleId, $pathToMigrationFile, $expectedCount, LoggerInterface $logger = null)
     {
         $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
@@ -290,12 +295,14 @@ class SqlMigrationToolTest extends TestCase
         $this->invokeMethods($tool, [
             ['createMigrationTable'],
             ['applyMigrationFile', [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodWorks/create_table.sql',
             ]],
         ]);
 
         $this->invokeMethods($tool, [
             ['applyMigrationFile', [
+                $moduleId,
                 $pathToMigrationFile,
             ]],
         ]);
@@ -311,10 +318,12 @@ class SqlMigrationToolTest extends TestCase
     {
         return [
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodWorks/single_query.sql',
                 2,
             ],
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodWorks/multi_query.sql',
                 1,
             ],
@@ -328,6 +337,7 @@ class SqlMigrationToolTest extends TestCase
         $this->testApplyMigrationFileMethodWorks(
             $data[0][0],
             $data[0][1],
+            $data[0][2],
             $this->getLogger($log)
         );
 
@@ -344,7 +354,7 @@ class SqlMigrationToolTest extends TestCase
      * @param string $expectedMessage
      * @param LoggerInterface $logger
      */
-    public function testApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile($pathToMigrationFile, $expectedMessage, LoggerInterface $logger = null)
+    public function testApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile($moduleId, $pathToMigrationFile, $expectedMessage, LoggerInterface $logger = null)
     {
         $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
@@ -356,6 +366,7 @@ class SqlMigrationToolTest extends TestCase
         $this->invokeMethods($tool, [
             ['createMigrationTable'],
             ['applyMigrationFile', [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile/create_table.sql',
             ]],
         ]);
@@ -363,6 +374,7 @@ class SqlMigrationToolTest extends TestCase
         try {
             $this->invokeMethods($tool, [
                 ['applyMigrationFile', [
+                    $moduleId,
                     $pathToMigrationFile,
                 ]],
             ]);
@@ -379,14 +391,17 @@ class SqlMigrationToolTest extends TestCase
     {
         return [
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile/single_query_with_error.sql',
                 SqlMigrationTool::MESSAGE__YOU_HAVE_AN_ERROR_IN_YOUR_SQL_SYNTAX__PATH,
             ],
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile/multi_query_with_error.sql',
                 SqlMigrationTool::MESSAGE__YOU_HAVE_AN_ERROR_IN_YOUR_SQL_SYNTAX__PATH,
             ],
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile/file_not_found.sql',
                 SqlMigrationTool::MESSAGE__COULD_NOT_READ_MIGRATION_FILE__PATH
             ],
@@ -400,11 +415,13 @@ class SqlMigrationToolTest extends TestCase
         $this->testApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile(
             $data[0][0],
             $data[0][1],
+            $data[0][2],
             $this->getLogger($log)
         );
         $this->testApplyMigrationFileMethodThrowsMigrationFileExceptionIfThereIsBrokenMigrationFile(
             $data[2][0],
             $data[2][1],
+            $data[2][2],
             $this->getLogger($log)
         );
 
@@ -424,7 +441,7 @@ class SqlMigrationToolTest extends TestCase
      * @dataProvider dataApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile
      * @param string $pathToMigrationFile
      */
-    public function testApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile($pathToMigrationFile)
+    public function testApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile($moduleId, $pathToMigrationFile)
     {
         $pdo = $this->getConnection();
         $tool = $this->getTool($pdo);
@@ -432,6 +449,7 @@ class SqlMigrationToolTest extends TestCase
         $this->invokeMethods($tool, [
             ['createMigrationTable'],
             ['applyMigrationFile', [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile/create_table.sql',
             ]],
         ]);
@@ -439,6 +457,7 @@ class SqlMigrationToolTest extends TestCase
         try {
             $this->invokeMethods($tool, [
                 ['applyMigrationFile', [
+                    $moduleId,
                     $pathToMigrationFile,
                 ]],
             ]);
@@ -456,9 +475,11 @@ class SqlMigrationToolTest extends TestCase
     {
         return [
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile/single_query_with_error.sql',
             ],
             [
+                '',
                 __DIR__ . '/SqlMigrationToolTest/ApplyMigrationFileMethodRollbacksTransactionIfThereIsBrokenMigrationFile/multi_query_with_error.sql',
             ],
         ];

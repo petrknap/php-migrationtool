@@ -212,10 +212,37 @@ class AbstractMigrationToolTest extends TestCase
         );
 
         $this->assertEquals(
-            [
+            ['' => [
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.1 - First migration.ext',
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.2 - Second migration.ext',
                 __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.3 - Third migration.ext',
+            ]],
+            @$this->invokeMethods($tool, [['getMigrationFiles']]) // @ because it throws notice if there is unsupported file
+        );
+    }
+
+    public function testGetMigrationFilesMethodWorksWithArray()
+    {
+        $tool = new AbstractMigrationToolMock(
+            [],
+            [
+                'origin' => __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks',
+                'new' => __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks_2',
+            ]
+        );
+
+        $this->assertEquals(
+            [
+                'origin_' => [
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.1 - First migration.ext',
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.2 - Second migration.ext',
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks/2016-06-22.3 - Third migration.ext',
+                ],
+                'new_' => [
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks_2/2016-06-22.1 - First migration.ext',
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks_2/2016-06-22.2 - Second migration.ext',
+                    __DIR__ . '/AbstractMigrationToolTest/GetMigrationFilesWorks_2/2016-06-22.3 - Third migration.ext',
+                ]
             ],
             @$this->invokeMethods($tool, [['getMigrationFiles']]) // @ because it throws notice if there is unsupported file
         );
@@ -226,23 +253,27 @@ class AbstractMigrationToolTest extends TestCase
      * @param string $pathToMigrationFile
      * @param string $expectedMigrationId
      */
-    public function testGetMigrationIdMethodWorks($pathToMigrationFile, $expectedMigrationId)
+    public function testGetMigrationIdMethodWorks($moduleId, $pathToMigrationFile, $expectedMigrationId)
     {
         $tool = new AbstractMigrationToolMock([]);
 
         $this->assertEquals(
             $expectedMigrationId,
-            $this->invokeMethods($tool, [['getMigrationId', [$pathToMigrationFile]]])
+            $this->invokeMethods($tool, [['getMigrationId', [$moduleId, $pathToMigrationFile]]])
         );
     }
 
     public function dataGetMigrationIdMethodWorks()
     {
         return [
-            ['/migration_file.ext', 'migration_file'],
-            ['/migration file.ext', 'migration'],
-            ['/migration_file', 'migration_file'],
-            ['/migration file', 'migration'],
+            ['', '/migration_file.ext', 'migration_file'],
+            ['', '/migration file.ext', 'migration'],
+            ['', '/migration_file', 'migration_file'],
+            ['', '/migration file', 'migration'],
+            ['module_', '/migration_file.ext', 'module_migration_file'],
+            ['module_', '/migration file.ext', 'module_migration'],
+            ['module_', '/migration_file', 'module_migration_file'],
+            ['module_', '/migration file', 'module_migration'],
         ];
     }
 }
